@@ -29,23 +29,32 @@ def listen_for_client(cs):
 
     while True:
         try:
+            # Keep listening for a message from cs socket
             msg = cs.recv(1024).decode()
+            # Replace the <SEP> token with ": "
+            msg = msg.replace(separator_token, ": ")
         except Exception as e:
+            # If the client is no longer connected, then remove it from the set
             print(f"!! Error !! {e}")
             client_sockets.remove(cs)
-        else:
-            msg = msg.replace(separator_token, ": ")
+            break
+            
+        # Iterate through all connected sockets and send message
         for client_socket in client_sockets:
             client_socket.send(msg.encode())
 
 while True:
+    # Constantly keep listening for new connections
     client_sockets, client_address = s.accept()
     print(f"{client_address} connected")
+    # Add the new client to the set of connected sockets
     client_sockets.add(client_sockets)
 
+    # Start a thread that listens for individual client messages
     t = Thread(target=listen_for_client, args=(client_sockets,))
+    # Daemon thread so it terminates whenever the main thread ends
     t.daemon = True
     t.start()
 
-    for i in client_sockets:
-        i.close()
+for client_socket in client_sockets:
+    client_socket.close()
